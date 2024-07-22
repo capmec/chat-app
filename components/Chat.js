@@ -8,42 +8,21 @@ import {
   collection,
   addDoc,
 } from 'firebase/firestore'
+import CustomActions from './CustomActions'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import MapView from 'react-native-maps'
 
-// Destructure name and background from route.params
-const Chat = ({ db, route, navigation, isConnected }) => {
-  const { userID } = route.params
-  const { name, background } = route.params
+// Destructure name, background and UserId from route.params
+const Chat = ({ db, route, navigation, isConnected, storage }) => {
+  const { name, background, userID } = route.params
   const [messages, setMessages] = useState([])
-  const onSend = (newMessages) => {
-    addDoc(collection(db, 'messages'), newMessages[0])
-  }
-
-  const renderBubble = (props) => {
-    return (
-      <Bubble
-        {...props}
-        wrapperStyle={{
-          left: {
-            backgroundColor: '#D6DDF6',
-          },
-          right: {
-            backgroundColor: '#ED3F78',
-          },
-        }}
-      />
-    )
-  }
-
-  const renderInputToolbar = (props) => {
-    if (isConnected) return <InputToolbar {...props} />
-    else return null
-  }
 
   let unsubMessages
   // useEffect hook to set messages options
   // Create a query to get the "messages" collection from the Firestore database
   useEffect(() => {
+    navigation.setOptions({ title: name })
+
     if (isConnected === true) {
       // unregister current onSnapshot() listener to avoid registering multiple listeners when
       // useEffect code is re-executed.
@@ -90,10 +69,69 @@ const Chat = ({ db, route, navigation, isConnected }) => {
     setMessages(JSON.parse(cachedMessages))
   }
 
-  // useEffect hook to set navigation options
-  useEffect(() => {
-    navigation.setOptions({ title: name })
-  }, [])
+  const onSend = (newMessages) => {
+    addDoc(collection(db, 'messages'), newMessages[0])
+  }
+
+  const renderBubble = (props) => {
+    return (
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          left: {
+            backgroundColor: '#D6DDF6',
+            borderBottomRightRadius: 15,
+            borderBottomLeftRadius: 15,
+            borderTopRightRadius: 15,
+            borderTopLeftRadius: 0,
+          },
+          right: {
+            backgroundColor: '#ED3F78',
+            borderBottomRightRadius: 0,
+            borderBottomLeftRadius: 15,
+            borderTopRightRadius: 15,
+            borderTopLeftRadius: 15,
+          },
+        }}
+      />
+    )
+  }
+
+  const renderInputToolbar = (props) => {
+    if (isConnected) return <InputToolbar {...props} />
+    else return null
+  }
+
+  const renderCustomActions = (props) => {
+    return (
+      <CustomActions
+        onSend={onSend}
+        storage={storage}
+        userID={userID}
+        {...props}
+      />
+    )
+  }
+
+  const renderCustomView = (props) => {
+    const { currentMessage } = props
+    if (currentMessage.location) {
+      return (
+        <View style={styles.mapContainer}>
+          <MapView
+            style={styles.map}
+            region={{
+              latitude: currentMessage.location.latitude,
+              longitude: currentMessage.location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          />
+        </View>
+      )
+    }
+    return null
+  }
 
   /* Render a View component with dynamic background color */
   return (
@@ -102,6 +140,8 @@ const Chat = ({ db, route, navigation, isConnected }) => {
         messages={messages}
         renderBubble={renderBubble}
         renderInputToolbar={renderInputToolbar}
+        renderActions={renderCustomActions}
+        renderCustomView={renderCustomView}
         onSend={(messages) => onSend(messages)}
         user={{
           _id: userID,
@@ -111,17 +151,24 @@ const Chat = ({ db, route, navigation, isConnected }) => {
       {Platform.OS === 'android' ? (
         <KeyboardAvoidingView behavior='height' />
       ) : null}
-      {Platform.OS === 'ios' ? (
-        <KeyboardAvoidingView behavior='padding' />
-      ) : null}
     </View>
   )
 }
 
-// Define styles for the component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  mapContainer: {
+    width: 200,
+    height: 200,
+    borderRadius: 13,
+    overflow: 'hidden',
+    margin: 3,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
 })
 
