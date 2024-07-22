@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { GiftedChat, Bubble } from 'react-native-gifted-chat'
+import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat'
 import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   onSnapshot,
   query,
@@ -9,6 +8,7 @@ import {
   collection,
   addDoc,
 } from 'firebase/firestore'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // Destructure name and background from route.params
 const Chat = ({ db, route, navigation, isConnected }) => {
