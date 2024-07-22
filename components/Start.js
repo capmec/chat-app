@@ -99,6 +99,9 @@ const Start = ({ navigation }) => {
       {Platform.OS === 'android' ? (
         <KeyboardAvoidingView behavior='height' />
       ) : null}
+      {Platform.OS === 'ios' ? (
+        <KeyboardAvoidingView behavior='height' />
+      ) : null}
     </ImageBackground>
   )
 }
