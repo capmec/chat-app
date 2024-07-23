@@ -1,7 +1,12 @@
-//Chat.js
 import { useEffect, useState } from 'react'
 import { GiftedChat, Bubble, InputToolbar, Day } from 'react-native-gifted-chat'
-import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native'
+import {
+  StyleSheet,
+  View,
+  Platform,
+  KeyboardAvoidingView,
+  Image,
+} from 'react-native'
 import {
   onSnapshot,
   query,
@@ -124,8 +129,22 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
           />
         </View>
       )
+    } else if (currentMessage.image) {
+      return (
+        <View style={styles.imageContainer}>
+          <Image
+            style={styles.image}
+            source={{ uri: currentMessage.image }}
+            resizeMode='cover'
+          />
+        </View>
+      )
     }
     return null
+  }
+
+  const renderMessageImage = (props) => {
+    return null // Disable default image rendering
   }
 
   return (
@@ -138,6 +157,7 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
         renderActions={renderCustomActions}
         renderCustomView={renderCustomView}
         onSend={(messages) => onSend(messages)}
+        renderMessageImage={renderMessageImage} // Disable default image rendering
         user={{
           _id: userID,
           name: name,
@@ -162,6 +182,17 @@ const styles = StyleSheet.create({
     margin: 4,
   },
   map: {
+    width: '100%',
+    height: '100%',
+  },
+  imageContainer: {
+    width: 250,
+    height: 250,
+    borderRadius: 13,
+    overflow: 'hidden',
+    margin: 4,
+  },
+  image: {
     width: '100%',
     height: '100%',
   },
