@@ -6,6 +6,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   Image,
+  TouchableOpacity,
+  Modal,
 } from 'react-native'
 import {
   onSnapshot,
@@ -21,6 +23,7 @@ import MapView from 'react-native-maps'
 const Chat = ({ db, route, navigation, isConnected, storage }) => {
   const { name, background, userID } = route.params
   const [messages, setMessages] = useState([])
+  const [selectedImage, setSelectedImage] = useState(null)
 
   let unsubMessages
 
@@ -93,8 +96,13 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
             borderTopLeftRadius: 15,
           },
         }}
+        renderMessageImage={() => null} // Override to prevent default image rendering
       />
     )
+  }
+
+  const handleImagePress = (imageUri) => {
+    setSelectedImage(imageUri)
   }
 
   const renderInputToolbar = (props) => {
@@ -131,20 +139,20 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
       )
     } else if (currentMessage.image) {
       return (
-        <View style={styles.imageContainer}>
-          <Image
-            style={styles.image}
-            source={{ uri: currentMessage.image }}
-            resizeMode='cover'
-          />
-        </View>
+        <TouchableOpacity
+          onPress={() => handleImagePress(currentMessage.image)}
+        >
+          <View style={styles.imageContainer}>
+            <Image
+              style={styles.messageImage}
+              source={{ uri: currentMessage.image }}
+              resizeMode='cover'
+            />
+          </View>
+        </TouchableOpacity>
       )
     }
     return null
-  }
-
-  const renderMessageImage = (props) => {
-    return null // Disable default image rendering
   }
 
   return (
@@ -157,7 +165,6 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
         renderActions={renderCustomActions}
         renderCustomView={renderCustomView}
         onSend={(messages) => onSend(messages)}
-        renderMessageImage={renderMessageImage} // Disable default image rendering
         user={{
           _id: userID,
           name: name,
@@ -166,6 +173,22 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
       {Platform.OS === 'android' ? (
         <KeyboardAvoidingView behavior='height' />
       ) : null}
+      <Modal
+        visible={selectedImage !== null}
+        transparent={true}
+        onRequestClose={() => setSelectedImage(null)}
+      >
+        <TouchableOpacity
+          style={styles.fullScreenContainer}
+          onPress={() => setSelectedImage(null)}
+        >
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.fullScreenImage}
+            resizeMode='contain'
+          />
+        </TouchableOpacity>
+      </Modal>
     </View>
   )
 }
@@ -192,7 +215,19 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     margin: 4,
   },
-  image: {
+  messageImage: {
+    width: 250,
+    height: 250,
+    borderRadius: 13,
+    overflow: 'hidden',
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
     width: '100%',
     height: '100%',
   },

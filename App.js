@@ -1,5 +1,4 @@
 import { StyleSheet, LogBox } from 'react-native'
-LogBox.ignoreLogs(['AsyncStorage has been extracted from'])
 import Start from './components/Start'
 import Chat from './components/Chat'
 import { initializeApp } from 'firebase/app'
@@ -12,6 +11,9 @@ import { enableNetwork } from 'firebase/firestore'
 import { useEffect } from 'react'
 import { Alert } from 'react-native'
 import { useNetInfo } from '@react-native-community/netinfo'
+
+LogBox.ignoreLogs([/auth/i, /avatar/i])
+LogBox.ignoreLogs(['AsyncStorage has been extracted from'])
 
 const App = () => {
   const firebaseConfig = {
@@ -58,12 +60,5 @@ const App = () => {
     </NavigationContainer>
   )
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-})
+
 export default App
