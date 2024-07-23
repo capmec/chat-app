@@ -1,9 +1,11 @@
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native'
-import { useActionSheet } from '@expo/react-native-action-sheet'
+// Import necessary modules and components from libraries
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as Location from 'expo-location'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { useActionSheet } from '@expo/react-native-action-sheet'
 
+// CustomActions component definition
 const CustomActions = ({
   wrapperStyle,
   iconTextStyle,
@@ -11,12 +13,68 @@ const CustomActions = ({
   storage,
   userID,
 }) => {
-  // Return a reference to Gifted Chat’s ActionSheet
+  // Function to generate a unique reference for the uploaded image
+  const generateReference = (uri) => {
+    const timeStamp = new Date().getTime()
+    const imageName = uri.split('/')[uri.split('/').length - 1]
+    return `${userID}-${timeStamp}-${imageName}`
+  }
+
+  // Function to upload image and send its URL
+  const uploadAndSendImage = async (imageURI) => {
+    const uniqueRefString = generateReference(imageURI)
+    const newUploadRef = ref(storage, uniqueRefString)
+    const response = await fetch(imageURI)
+    const blob = await response.blob()
+    uploadBytes(newUploadRef, blob).then(async (snapshot) => {
+      const imageURL = await getDownloadURL(snapshot.ref)
+      onSend({ image: imageURL })
+    })
+  }
+
+  // Function to pick an image from the device's library
+  const pickImage = async () => {
+    let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (permissions?.granted) {
+      let result = await ImagePicker.launchImageLibraryAsync()
+      if (!result.canceled) await uploadAndSendImage(result.assets[0].uri)
+      else Alert.alert("Permissions haven't been granted.")
+    }
+  }
+
+  // Function to take a photo using the device's camera
+  const takePhoto = async () => {
+    let permissions = await ImagePicker.requestCameraPermissionsAsync()
+    if (permissions?.granted) {
+      let result = await ImagePicker.launchCameraAsync()
+      if (!result.canceled) await uploadAndSendImage(result.assets[0].uri)
+      else Alert.alert("Permissions haven't been granted.")
+    }
+  }
+
+  // Function to get the current device location
+  const getLocation = async () => {
+    let permissions = await Location.requestForegroundPermissionsAsync()
+    if (permissions?.granted) {
+      const location = await Location.getCurrentPositionAsync({})
+      if (location) {
+        onSend({
+          location: {
+            longitude: location.coords.longitude,
+            latitude: location.coords.latitude,
+          },
+        })
+      } else Alert.alert('Error occurred while fetching location')
+    } else Alert.alert("Permissions haven't been granted.")
+  }
+
+  // Hook to use the action sheet for presenting options
   const actionSheet = useActionSheet()
 
+  // Function to handle action press from the action sheet
   const onActionPress = () => {
     const options = [
-      'Select an Image from Library',
+      'Choose From Library',
       'Take Picture',
       'Send Location',
       'Cancel',
@@ -43,77 +101,24 @@ const CustomActions = ({
     )
   }
 
-  // Function to generate a unique reference for an image based on user ID, current timestamp, and image name
-  const generateReference = (uri) => {
-    const timeStamp = new Date().getTime()
-    const imageName = uri.split('/')[uri.split('/').length - 1]
-    return `${userID}-${timeStamp}-${imageName}`
-  }
-  // Function to upload an image to Firebase Storage and send its URL
-  const uploadAndSendImage = async (imageURI) => {
-    const uniqueRefString = generateReference(imageURI)
-    const newUploadRef = ref(storage, uniqueRefString)
-    const response = await fetch(imageURI)
-    // Convert the image data into a Blob
-    const blob = await response.blob()
-    uploadBytes(newUploadRef, blob).then(async (snapshot) => {
-      const imageURL = await getDownloadURL(snapshot.ref)
-      onSend({ image: imageURL })
-    })
-  }
-
-  // Function to pick an image from the device's media library
-  const pickImage = async () => {
-    let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (permissions?.granted) {
-      let result = await ImagePicker.launchImageLibraryAsync()
-      if (!result.canceled) await uploadAndSendImage(result.assets[0].uri)
-    } else Alert.alert("Permissions haven't been granted.")
-  }
-
-  // Function to take a photo using the device's camera
-  const takePhoto = async () => {
-    let permissions = await ImagePicker.requestCameraPermissionsAsync()
-    if (permissions?.granted) {
-      let result = await ImagePicker.launchCameraAsync()
-      if (!result.canceled) await uploadAndSendImage(result.assets[0].uri)
-    } else Alert.alert("Permissions haven't been granted.")
-  }
-
-  // Function to get the current device location
-  const getLocation = async () => {
-    let permissions = await Location.requestForegroundPermissionsAsync()
-    if (permissions?.granted) {
-      const location = await Location.getCurrentPositionAsync({})
-      if (location) {
-        onSend({
-          location: {
-            longitude: location.coords.longitude,
-            latitude: location.coords.latitude,
-          },
-        })
-      } else Alert.alert('Error occurred while fetching location')
-    } else Alert.alert("Permissions haven't been granted.")
-  }
-
+  // Render component
   return (
-    <View>
-      <TouchableOpacity
-        accessible={true}
-        accessibilityLabel='More options'
-        accessibilityHint='Lets you choose to send an image or your geolocation.'
-        accessibilityRole='button'
-        style={styles.container}
-        onPress={onActionPress}
-      >
-        <View style={[styles.wrapper, wrapperStyle]}>
-          <Text style={[styles.iconText, iconTextStyle]}>+</Text>
-        </View>
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onActionPress}
+      accessible={true}
+      accessibilityLabel='This is an input field with a clickable icon that expands a menu'
+      accessibilityHint='Choose what type of media you want to share or cancel to collapse menu'
+      accessibilityRole='button'
+    >
+      <View style={[styles.wrapper, wrapperStyle]}>
+        <Text style={[styles.iconText, iconTextStyle]}>+</Text>
+      </View>
+    </TouchableOpacity>
   )
 }
 
+// Styles for the CustomActions component
 const styles = StyleSheet.create({
   container: {
     width: 26,
@@ -126,7 +131,6 @@ const styles = StyleSheet.create({
     borderColor: '#b2b2b2',
     borderWidth: 2,
     flex: 1,
-    justifyContent: 'center',
   },
   iconText: {
     color: '#b2b2b2',
@@ -137,4 +141,5 @@ const styles = StyleSheet.create({
   },
 })
 
+// Export the CustomActions component
 export default CustomActions

@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '88%',
-    height: '44%',
+    height: '60%',
     backgroundColor: 'white',
     alignItems: 'center',
     marginBottom: 20,
@@ -156,21 +156,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   chooseColorBox: {
-    width: '84%',
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   colorButtonsContainer: {
     flexDirection: 'row',
-    alignSelf: 'flex-start',
+    justifyContent: 'space-between',
+    margin: 20,
   },
   chooseColor: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    border: 3,
-    marginRight: 15,
-    borderColor: 'white',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    margin: 10,
   },
   selectedColor: {
     borderColor: '#fff',
@@ -179,11 +178,9 @@ const styles = StyleSheet.create({
 
   chooseColorText: {
     fontSize: 16,
-    fontWeight: '300',
     color: '#757083',
-    textAlign: 'left',
-    alignSelf: 'flex-start',
-    marginBottom: 10,
+    fontWeight: '300',
+    marginTop: 10,
   },
 })
 

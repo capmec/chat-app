@@ -1,5 +1,6 @@
+//Chat.js
 import { useEffect, useState } from 'react'
-import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat'
+import { GiftedChat, Bubble, InputToolbar, Day } from 'react-native-gifted-chat'
 import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native'
 import {
   onSnapshot,
@@ -12,31 +13,23 @@ import CustomActions from './CustomActions'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import MapView from 'react-native-maps'
 
-// Destructure name, background and UserId from route.params
 const Chat = ({ db, route, navigation, isConnected, storage }) => {
   const { name, background, userID } = route.params
   const [messages, setMessages] = useState([])
 
   let unsubMessages
-  // useEffect hook to set messages options
-  // Create a query to get the "messages" collection from the Firestore database
+
   useEffect(() => {
     navigation.setOptions({ title: name })
 
     if (isConnected === true) {
-      // unregister current onSnapshot() listener to avoid registering multiple listeners when
-      // useEffect code is re-executed.
       if (unsubMessages) unsubMessages()
       unsubMessages = null
 
       const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'))
 
-      // Subscribe to changes in the "messages" collection using onSnapshot.
-      // This function will be called whenever there are changes in the collection.
       unsubMessages = onSnapshot(q, (documentsSnapshot) => {
-        // Initialize an empty array to store the new messages
         let newMessages = []
-        // Iterate through each document in the snapshot
         documentsSnapshot.forEach((doc) => {
           newMessages.push({
             id: doc.id,
@@ -49,11 +42,10 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
       })
     } else loadCachedMessages()
 
-    // Clean up code
     return () => {
       if (unsubMessages) unsubMessages()
     }
-  }, [isConnected]) // isConnected used as a dependency value and will allow the component to call the callback of useEffect whenewer the isConnected prop's value changes.
+  }, [isConnected])
 
   const cacheMessages = async (messagesToCache) => {
     try {
@@ -62,15 +54,18 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
       console.log(error.message)
     }
   }
-  // Call this function if the isConnected prop turns out to be false in useEffect()
+
   const loadCachedMessages = async () => {
-    // The empty array is for cachedMessages in case AsyncStorage() fails when the messages item hasn’t been set yet in AsyncStorage.
     const cachedMessages = (await AsyncStorage.getItem('messages')) || []
     setMessages(JSON.parse(cachedMessages))
   }
 
   const onSend = (newMessages) => {
     addDoc(collection(db, 'messages'), newMessages[0])
+  }
+
+  const renderDay = (props) => {
+    return <Day {...props} textStyle={{ color: '#ffff' }} />
   }
 
   const renderBubble = (props) => {
@@ -133,10 +128,10 @@ const Chat = ({ db, route, navigation, isConnected, storage }) => {
     return null
   }
 
-  /* Render a View component with dynamic background color */
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <GiftedChat
+        renderDay={renderDay}
         messages={messages}
         renderBubble={renderBubble}
         renderInputToolbar={renderInputToolbar}
@@ -164,7 +159,7 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 13,
     overflow: 'hidden',
-    margin: 3,
+    margin: 4,
   },
   map: {
     width: '100%',
